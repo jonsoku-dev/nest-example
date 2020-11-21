@@ -6,6 +6,7 @@ import { Coffee } from './entities/coffee.entity';
 import { Flavor } from './entities/flavor.entity';
 import { Event } from '../events/entities/event.entity';
 import { COFFEE_BRANDS } from './coffees.constants';
+import { Connection } from 'typeorm';
 
 class ConfigService {}
 
@@ -27,11 +28,21 @@ export class CoffeeBrandsFactory {
   providers: [
     CoffeesService,
     CoffeeBrandsFactory,
+    // {
+    //   provide: COFFEE_BRANDS,
+    //   useFactory: (brandsFactory: CoffeeBrandsFactory) =>
+    //     brandsFactory.create(),
+    //   inject: [CoffeeBrandsFactory], // useFactory 의 인자로 들어간다.
+    // },
     {
       provide: COFFEE_BRANDS,
-      useFactory: (brandsFactory: CoffeeBrandsFactory) =>
-        brandsFactory.create(),
-      inject: [CoffeeBrandsFactory], // useFactory 의 인자로 들어간다.
+      // 비동기이기때문에 서비스가 실행되기 전에 실행되어 완료가 되어야 서비스로 넘어갈 수 있음
+      useFactory: async (connection: Connection): Promise<string[]> => {
+        // const coffeeBrands = await connection.query('SELECT * ...');
+        const coffeeBrands = await Promise.resolve(['buddy brew', 'nescafe']);
+        return coffeeBrands;
+      },
+      inject: [Connection],
     },
     {
       provide: ConfigService,

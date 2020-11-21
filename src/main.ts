@@ -17,7 +17,8 @@ async function bootstrap() {
       },
     }),
   );
-  app.useGlobalGuards(new ApiKeyGuard());
+  // 가드 내부 주입으로 인해 문제가 발생한다. (guard내의 constructor)
+  // app.useGlobalGuards(new ApiKeyGuard())
   app.useGlobalFilters(new HttpExceptionFilter());
   await app.listen(3000);
 }

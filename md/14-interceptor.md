@@ -5,10 +5,12 @@
 * 기본 메서드 동작 확장
 * 특정 조건에 따라 (예 : 다양한 응답 캐싱과 같은 작업 수행) 메서드를 완전히 재정의하거나
 
-# Generate WrapResponseInterceptor with Nest CLI 
+# 인터셉터를 이용하여 response wrapping 하기
+
+### Generate WrapResponseInterceptor with Nest CLI 
 nest g interceptor common/interceptors/wrap-response
 
-# WrapResponseInterceptor FINAL CODE 
+### WrapResponseInterceptor FINAL CODE 
 data로 wrapping한다.
 ```ts
 import {
@@ -30,11 +32,56 @@ export class WrapResponseInterceptor implements NestInterceptor {
 }
 ```
 
-# Apply Interceptor globally in main.ts file
+### Apply Interceptor globally in main.ts file
 ```
 ...
 
 app.useGlobalInterceptors(new WrapResponseInterceptor());
 
 ...
+```
+
+# 인터셉터를 이용하여 시간초과 처리하기
+### Generate TimeoutInterceptor with Nest CLI */
+```bash
+nest g interceptor common/interceptors/timeout
+```
+
+### Apply TimeoutInterceptor globally in main.ts file */
+```ts
+app.useGlobalInterceptors(
+  new WrapResponseInterceptor(), 
+  new TimeoutInterceptor(), // 👈
+);
+```
+
+### Add manual timeout to force timeout interceptor to work */
+await new Promise(resolve => setTimeout(resolve, 5000));
+
+### TimeoutInterceptor FINAL CODE */
+```ts
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+  RequestTimeoutException,
+} from '@nestjs/common';
+import { Observable, throwError, TimeoutError } from 'rxjs';
+import { catchError, timeout } from 'rxjs/operators';
+
+@Injectable()
+export class TimeoutInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    return next.handle().pipe(
+      timeout(3000),
+      catchError(err => {
+        if (err instanceof TimeoutError) {
+          return throwError(new RequestTimeoutException());
+        }
+        return throwError(err);
+      }),
+    );
+  }
+}
 ```
